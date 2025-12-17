@@ -1,118 +1,90 @@
 # ------------------------------------------------------------
-# Hybrid MPI + OpenMP Random Forest — Makefile (macOS)
+# Hybrid MPI + OpenMP Random Forest — Makefile
+# Multi-Architecture Support: Apple Silicon & Intel macOS
 # ------------------------------------------------------------
 
-# Use system clang++ with Homebrew libomp
-CXX = clang++
-OMP_LIB = /opt/homebrew/opt/libomp/lib
+# Detect architecture (default target)
+ARCH := $(shell uname -m)
 
-# Use mpicxx directly
-MPI_CXX = mpicxx
+# Apple Silicon paths
+SILICON_LLVM_CLANG = /Users/jhatcher/.swiftly/bin/clang++
+SILICON_LLVM_OMP   = /opt/homebrew/opt/libomp
 
-CXXFLAGS = -O3 -std=c++17 -march=native -Xpreprocessor -fopenmp -Iinclude -I/opt/homebrew/opt/libomp/include
-LDFLAGS  = -L$(OMP_LIB) -lomp
+# Intel Mac paths
+INTEL_LLVM_CLANG = /Users/jhatcher/.swiftly/bin/clang++
+INTEL_LLVM_OMP   = /usr/local/opt/libomp
 
-# Targets
-SERIAL_FOREST_TARGET = serial_forest
-FOREST_TARGET = forest
-MPI_FOREST_TARGET = mpi_forest
-HISTOGRAM_TEST_TARGET = test_histogram
-TREE_BUILDER_TEST_TARGET = test_tree_builder
+# Set default based on detected architecture
+ifeq ($(ARCH),arm64)
+    LLVM_CLANG = $(SILICON_LLVM_CLANG)
+    LLVM_OMP   = $(SILICON_LLVM_OMP)
+    ARCH_TYPE  = Apple Silicon (arm64)
+else
+    LLVM_CLANG = $(INTEL_LLVM_CLANG)
+    LLVM_OMP   = $(INTEL_LLVM_OMP)
+    ARCH_TYPE  = Intel (x86_64)
+endif
 
-# Common source files
-COMMON_SRC = src/bins.cpp \
-             src/histogram.cpp \
-             src/tree_builder.cpp \
-             src/forest.cpp
+# Force mpicxx to use LLVM
+MPI_CXX = OMPI_CXX=$(LLVM_CLANG) mpicxx
 
-# Serial Forest source (no parallelization)
-SERIAL_FOREST_SRC = src/main_serial.cpp \
-                    src/bins.cpp \
-                    src/histogram.cpp \
-                    src/tree_builder.cpp
+CXXFLAGS = -O3 -std=c++17 -march=native -fopenmp -Iinclude -I$(LLVM_OMP)/include
+LDFLAGS  = -L$(LLVM_OMP)/lib -lomp
 
-# Forest-only source (OpenMP, no MPI)
-FOREST_SRC = src/main_forest.cpp \
-             $(COMMON_SRC)
+TARGET = hybrid_rf
 
-# MPI Forest source
-MPI_FOREST_SRC = src/main_mpi_forest.cpp \
-                 $(COMMON_SRC) \
-                 src/mpi_forest.cpp
-
-# Histogram test source
-HISTOGRAM_TEST_SRC = src/test_histogram.cpp \
-                     src/bins.cpp \
-                     src/histogram.cpp
-
-# Tree builder test source
-TREE_BUILDER_TEST_SRC = src/test_tree_builder.cpp \
-                        src/bins.cpp \
-                        src/histogram.cpp \
-                        src/tree_builder.cpp
+SRC = src/main.cpp \
+      src/bins.cpp \
+      src/histogram.cpp \
+      src/tree_builder.cpp \
+      src/forest.cpp \
+      src/mpi_forest.cpp
 
 # ------------------------------------------------------------
-# Build all executables
+# Build Targets
 # ------------------------------------------------------------
-all: $(SERIAL_FOREST_TARGET) $(FOREST_TARGET) $(MPI_FOREST_TARGET) $(HISTOGRAM_TEST_TARGET) $(TREE_BUILDER_TEST_TARGET)
 
-# Serial Forest (no parallelization - compiled with OpenMP but runs with 1 thread)
-$(SERIAL_FOREST_TARGET): $(SERIAL_FOREST_SRC)
-	$(CXX) $(CXXFLAGS) $(SERIAL_FOREST_SRC) $(LDFLAGS) -o $(SERIAL_FOREST_TARGET)
-	@echo "Built: ./$(SERIAL_FOREST_TARGET) (Serial - no parallelization)"
+# Default build (auto-detect architecture)
+all: $(TARGET)
 
-# Regular Forest (OpenMP only)
-$(FOREST_TARGET): $(FOREST_SRC)
-	$(CXX) $(CXXFLAGS) $(FOREST_SRC) $(LDFLAGS) -o $(FOREST_TARGET)
-	@echo "Built: ./$(FOREST_TARGET) (OpenMP only)"
+$(TARGET): $(SRC)
+	@echo "Building for $(ARCH_TYPE)..."
+	$(MPI_CXX) $(CXXFLAGS) $(SRC) $(LDFLAGS) -o $(TARGET)
+	@echo "------------------------------------------------------------"
+	@echo "Build complete: ./$(TARGET)"
+	@echo "Architecture: $(ARCH_TYPE)"
+	@echo "Use 'make run' to execute with MPI"
+	@echo "------------------------------------------------------------"
 
-# MPI Forest (MPI + OpenMP)
-$(MPI_FOREST_TARGET): $(MPI_FOREST_SRC)
-	$(MPI_CXX) $(CXXFLAGS) $(MPI_FOREST_SRC) $(LDFLAGS) -o $(MPI_FOREST_TARGET)
-	@echo "Built: ./$(MPI_FOREST_TARGET) (MPI + OpenMP)"
+# Explicit Apple Silicon build
+silicon:
+	@echo "Building for Apple Silicon (arm64)..."
+	$(MAKE) all \
+		LLVM_CLANG=$(SILICON_LLVM_CLANG) \
+		LLVM_OMP=$(SILICON_LLVM_OMP) \
+		ARCH_TYPE="Apple Silicon (arm64)"
 
-# Histogram Test
-$(HISTOGRAM_TEST_TARGET): $(HISTOGRAM_TEST_SRC)
-	$(CXX) $(CXXFLAGS) $(HISTOGRAM_TEST_SRC) $(LDFLAGS) -o $(HISTOGRAM_TEST_TARGET)
-	@echo "Built: ./$(HISTOGRAM_TEST_TARGET)"
-
-# Tree Builder Test
-$(TREE_BUILDER_TEST_TARGET): $(TREE_BUILDER_TEST_SRC)
-	$(CXX) $(CXXFLAGS) $(TREE_BUILDER_TEST_SRC) $(LDFLAGS) -o $(TREE_BUILDER_TEST_TARGET)
-	@echo "Built: ./$(TREE_BUILDER_TEST_TARGET)"
+# Explicit Intel Mac build
+intel:
+	@echo "Building for Intel Mac (x86_64)..."
+	$(MAKE) all \
+		LLVM_CLANG=$(INTEL_LLVM_CLANG) \
+		LLVM_OMP=$(INTEL_LLVM_OMP) \
+		ARCH_TYPE="Intel Mac (x86_64)"
 
 # ------------------------------------------------------------
 # Clean
 # ------------------------------------------------------------
 clean:
-	rm -f $(FOREST_TARGET) $(MPI_FOREST_TARGET) $(HISTOGRAM_TEST_TARGET) $(TREE_BUILDER_TEST_TARGET)
+	rm -f $(TARGET)
 	@echo "Clean complete."
 
 # ------------------------------------------------------------
-# Run targets
+# Run (default 4 MPI ranks)
 # ------------------------------------------------------------
-NP ?= 2
+NP ?= 4
 
-run-forest: $(FOREST_TARGET)
-	./$(FOREST_TARGET)
+run: $(TARGET)
+	mpirun -np $(NP) ./$(TARGET)
 
-run-mpi: $(MPI_FOREST_TARGET)
-	mpirun -np $(NP) ./$(MPI_FOREST_TARGET)
-
-run-histogram: $(HISTOGRAM_TEST_TARGET)
-	./$(HISTOGRAM_TEST_TARGET)
-
-run-tree-builder: $(TREE_BUILDER_TEST_TARGET)
-	./$(TREE_BUILDER_TEST_TARGET)
-
-# Visualization - Compare Models
-visualize: 
-	@echo "Running models and generating comparison visualizations..."
-	@python3 -c "import matplotlib, numpy" 2>/dev/null && \
-		python3 compare_models.py || \
-		echo "Error: Please install matplotlib and numpy: pip3 install --break-system-packages matplotlib numpy"
-
-# Default run (MPI forest)
-run: run-mpi
-
-.PHONY: all clean run run-forest run-mpi run-histogram run-tree-builder visualize
+.PHONY: all clean run silicon intel

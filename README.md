@@ -2,6 +2,10 @@
 
 A high-performance implementation of Random Forest using MPI (Message Passing Interface) for distributed computing and OpenMP for shared-memory parallelism. This hybrid approach achieves excellent performance with **99%+ accuracy** and **99%+ F1 scores** on the diabetes prediction dataset.
 
+## docs table of contents etc.
+
+[troubleshooting](docs/troubleshooting.md)
+
 ## Features
 
 - **Hybrid Parallelization**: Combines MPI for distributed computing across multiple nodes/ranks with OpenMP for parallel tree building within each rank
@@ -32,7 +36,7 @@ A high-performance implementation of Random Forest using MPI (Message Passing In
 └── README.md                 # This file
 ```
 
-## Requirements
+## Dependencies
 
 - **MPI**: OpenMPI or MPICH
 - **OpenMP**: OpenMP library (libomp)
@@ -136,21 +140,6 @@ Overhead:    0.390625%
 F1 Score:    99.4371%
 ================================
 ```
-
-## How It Works
-
-1. **Data Distribution**: Rank 0 loads the dataset and broadcasts it to all MPI ranks
-2. **Tree Distribution**: Trees are evenly split across MPI ranks (e.g., 500 trees with 2 ranks = 250 trees per rank)
-3. **Parallel Training**: Each rank trains its subset of trees using OpenMP for parallel tree building
-4. **Vote Aggregation**: Predictions from all ranks are combined using MPI_Allreduce to get final predictions
-
-## Architecture
-
-- **MPI Layer**: Handles distributed computing across multiple processes
-- **OpenMP Layer**: Parallelizes tree building within each MPI rank
-- **Histogram-based Splits**: Fast split finding using binned data representation
-- **Bootstrap Sampling**: Each tree uses a random bootstrap sample of the training data
-
 ## Dataset
 
 The code uses the `diabetes.csv` dataset with:
@@ -158,29 +147,4 @@ The code uses the `diabetes.csv` dataset with:
 - **Features**: 8 (Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age)
 - **Classes**: 2 (No Diabetes: 0, Diabetes: 1)
 - **Classes**: We have also used a synthetic dataset 
-
-## Troubleshooting
-
-### Build Issues
-
-If you encounter OpenMP errors on macOS:
-```bash
-# Update Makefile paths for your system
-# Check OpenMP library location:
-find /opt/homebrew -name "libomp*" 2>/dev/null
-```
-
-### Runtime Issues
-
-If MPI fails to run:
-```bash
-# Check MPI installation
-which mpirun
-mpirun --version
-
-# Try with explicit path
-/opt/homebrew/bin/mpirun -np 2 ./mpi_forest
-```
-
-
 

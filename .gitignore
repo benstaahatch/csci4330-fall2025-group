@@ -24,3 +24,5 @@ mpi_code_package/
 
 # Keep only parallel code files
 
+# ignore binaries and executables
+/hybrid_rf
