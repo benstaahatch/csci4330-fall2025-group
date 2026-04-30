@@ -24,3 +24,7 @@ mpi_code_package/
 
 # Keep only parallel code files
 
+# Generated experiment artifacts
+Results/runs/
+Results/plots/
+Results/summaries/
