@@ -47,8 +47,11 @@ public:
     // Predict a single row
     int predictSingle(const vector<uint8_t*>& sampleCols) const;
 
-    // Predict a batch (local prediction)
-    vector<int> predictBatch() const;
+    // Predict a batch on an arbitrary binned dataset
+    vector<int> predictBatch(const vector<vector<uint8_t>>& X_eval_bins) const;
+
+    // Predict vote counts for each sample/class across all local trees
+    vector<int> predictVoteCounts(const vector<vector<uint8_t>>& X_eval_bins) const;
 
     // Access trained trees
     const vector<TreeNode*>& getTrees() const {

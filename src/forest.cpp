@@ -107,27 +107,64 @@ int RandomForest::predictSingle(const vector<uint8_t*>& sampleCols) const
 }
 
 // ------------------------------------------------------------
-// Predict over all rows (local prediction).
+// Predict over all rows in an arbitrary evaluation dataset.
 // Uses OpenMP to parallelize over samples.
 // ------------------------------------------------------------
-vector<int> RandomForest::predictBatch() const
+vector<int> RandomForest::predictBatch(const vector<vector<uint8_t>>& X_eval_bins) const
 {
-    int n_samples = y.size();
-    int n_features = X_bins.size();
+    int n_samples = X_eval_bins.empty() ? 0 : X_eval_bins[0].size();
+    vector<int> voteCounts = predictVoteCounts(X_eval_bins);
+    vector<int> preds(n_samples, 0);
 
-    vector<int> preds(n_samples);
-
-    #pragma omp parallel for
     for (int i = 0; i < n_samples; ++i) {
-
-        // Build column-pointers for this row
-        vector<uint8_t*> cols(n_features);
-        for (int j = 0; j < n_features; ++j)
-            cols[j] = (uint8_t*)&X_bins[j][i];
-
-        // Predict
-        preds[i] = predictSingle(cols);
+        int bestClass = 0;
+        int bestVotes = voteCounts[i * cfg.numClasses];
+        for (int c = 1; c < cfg.numClasses; ++c) {
+            int classVotes = voteCounts[i * cfg.numClasses + c];
+            if (classVotes > bestVotes) {
+                bestVotes = classVotes;
+                bestClass = c;
+            }
+        }
+        preds[i] = bestClass;
     }
 
     return preds;
+}
+
+// ------------------------------------------------------------
+// Predict raw vote counts over all rows in an arbitrary evaluation
+// dataset. Each tree contributes one vote per sample.
+// ------------------------------------------------------------
+vector<int> RandomForest::predictVoteCounts(const vector<vector<uint8_t>>& X_eval_bins) const
+{
+    int n_samples = X_eval_bins.empty() ? 0 : X_eval_bins[0].size();
+    int n_features = X_eval_bins.size();
+
+    vector<int> voteCounts(n_samples * cfg.numClasses, 0);
+
+    #pragma omp parallel for
+    for (int i = 0; i < n_samples; ++i) {
+        vector<uint8_t*> cols(n_features);
+        for (int j = 0; j < n_features; ++j)
+            cols[j] = (uint8_t*)&X_eval_bins[j][i];
+
+        vector<int> localVotes(cfg.numClasses, 0);
+        for (TreeNode* root : trees) {
+            TreeNode* node = root;
+            while (!node->isLeaf) {
+                uint8_t bin = *cols[node->featureIndex];
+                if (bin <= node->binThreshold)
+                    node = node->left;
+                else
+                    node = node->right;
+            }
+            localVotes[node->predictedClass]++;
+        }
+
+        for (int c = 0; c < cfg.numClasses; ++c)
+            voteCounts[i * cfg.numClasses + c] = localVotes[c];
+    }
+
+    return voteCounts;
 }
