@@ -50,26 +50,16 @@ void MPIRandomForest::fit()
 }
 
 // ------------------------------------------------------------
-// MPI prediction: each rank predicts using local trees,
-// then votes are combined using MPI_Allreduce.
+// MPI prediction: each rank predicts on the evaluation dataset
+// using local trees, then votes are combined using MPI_Allreduce.
 // ------------------------------------------------------------
-vector<int> MPIRandomForest::predict()
+vector<int> MPIRandomForest::predict(const vector<vector<uint8_t>>& X_eval_bins)
 {
-    int n_samples = y.size();
+    int n_samples = X_eval_bins.empty() ? 0 : X_eval_bins[0].size();
     int numClasses = cfg.numClasses;
 
-    // Local predictions
-    vector<int> localPreds = localForest->predictBatch();
-
-    // Convert local predictions to one-hot votes per class
-    vector<int> localVotes(n_samples * numClasses, 0);
-
-    for (int i = 0; i < n_samples; ++i) {
-    int cls = localPreds[i];
-    if (cls < 0 || cls >= numClasses) cls = 0;
-    localVotes[i * numClasses + cls]++;
-}
-
+    // Local per-tree vote counts from this rank's forest subset
+    vector<int> localVotes = localForest->predictVoteCounts(X_eval_bins);
 
     // Global votes after MPI reduction
     vector<int> globalVotes(n_samples * numClasses, 0);

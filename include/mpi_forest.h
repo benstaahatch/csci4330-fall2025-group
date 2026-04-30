@@ -37,8 +37,8 @@ public:
     // Train forest in parallel across MPI ranks
     void fit();
 
-    // Predict entire dataset via MPI vote merging
-    vector<int> predict();
+    // Predict an arbitrary evaluation dataset via MPI vote merging
+    vector<int> predict(const vector<vector<uint8_t>>& X_eval_bins);
 
 };
 
