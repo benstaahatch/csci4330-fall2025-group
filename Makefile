@@ -12,107 +12,106 @@ MPI_CXX = mpicxx
 CXXFLAGS = -O3 -std=c++17 -march=native -Xpreprocessor -fopenmp -Iinclude -I/opt/homebrew/opt/libomp/include
 LDFLAGS  = -L$(OMP_LIB) -lomp
 
-# Targets
-SERIAL_FOREST_TARGET = serial_forest
-FOREST_TARGET = forest
+# Supported executables
 MPI_FOREST_TARGET = mpi_forest
-HISTOGRAM_TEST_TARGET = test_histogram
-TREE_BUILDER_TEST_TARGET = test_tree_builder
+HYBRID_RF_TARGET = hybrid_rf
+BACKUP_RF_SERIAL_TARGET = backup_rf_serial_compare
+BACKUP_RF_OPENMP_TARGET = backup_rf_openmp_compare
+BACKUP_RF_MPI_TARGET = backup_rf_mpi_compare
 
-# Common source files
+# Shared source files for the hybrid build
 COMMON_SRC = src/bins.cpp \
              src/histogram.cpp \
              src/tree_builder.cpp \
              src/forest.cpp
 
-# Serial Forest source (no parallelization)
-SERIAL_FOREST_SRC = src/main_serial.cpp \
-                    src/bins.cpp \
-                    src/histogram.cpp \
-                    src/tree_builder.cpp
-
-# Forest-only source (OpenMP, no MPI)
-FOREST_SRC = src/main_forest.cpp \
-             $(COMMON_SRC)
-
-# MPI Forest source
-MPI_FOREST_SRC = src/main_mpi_forest.cpp \
+# Canonical hybrid entry point
+MPI_FOREST_SRC = src/main.cpp \
                  $(COMMON_SRC) \
                  src/mpi_forest.cpp
-
-# Histogram test source
-HISTOGRAM_TEST_SRC = src/test_histogram.cpp \
-                     src/bins.cpp \
-                     src/histogram.cpp
-
-# Tree builder test source
-TREE_BUILDER_TEST_SRC = src/test_tree_builder.cpp \
-                        src/bins.cpp \
-                        src/histogram.cpp \
-                        src/tree_builder.cpp
+BACKUP_RF_SERIAL_SRC = src/backup_rf_serial_compare.cpp
+BACKUP_RF_OPENMP_SRC = src/backup_rf_openmp_compare.cpp
+BACKUP_RF_MPI_SRC = src/backup_rf_mpi_compare.cpp
 
 # ------------------------------------------------------------
-# Build all executables
+# Build supported executables
 # ------------------------------------------------------------
-all: $(SERIAL_FOREST_TARGET) $(FOREST_TARGET) $(MPI_FOREST_TARGET) $(HISTOGRAM_TEST_TARGET) $(TREE_BUILDER_TEST_TARGET)
+all: $(MPI_FOREST_TARGET)
 
-# Serial Forest (no parallelization - compiled with OpenMP but runs with 1 thread)
-$(SERIAL_FOREST_TARGET): $(SERIAL_FOREST_SRC)
-	$(CXX) $(CXXFLAGS) $(SERIAL_FOREST_SRC) $(LDFLAGS) -o $(SERIAL_FOREST_TARGET)
-	@echo "Built: ./$(SERIAL_FOREST_TARGET) (Serial - no parallelization)"
-
-# Regular Forest (OpenMP only)
-$(FOREST_TARGET): $(FOREST_SRC)
-	$(CXX) $(CXXFLAGS) $(FOREST_SRC) $(LDFLAGS) -o $(FOREST_TARGET)
-	@echo "Built: ./$(FOREST_TARGET) (OpenMP only)"
-
-# MPI Forest (MPI + OpenMP)
+# MPI + OpenMP hybrid build
 $(MPI_FOREST_TARGET): $(MPI_FOREST_SRC)
 	$(MPI_CXX) $(CXXFLAGS) $(MPI_FOREST_SRC) $(LDFLAGS) -o $(MPI_FOREST_TARGET)
 	@echo "Built: ./$(MPI_FOREST_TARGET) (MPI + OpenMP)"
 
-# Histogram Test
-$(HISTOGRAM_TEST_TARGET): $(HISTOGRAM_TEST_SRC)
-	$(CXX) $(CXXFLAGS) $(HISTOGRAM_TEST_SRC) $(LDFLAGS) -o $(HISTOGRAM_TEST_TARGET)
-	@echo "Built: ./$(HISTOGRAM_TEST_TARGET)"
+# README-compatible alias
+$(HYBRID_RF_TARGET): $(MPI_FOREST_TARGET)
+	cp $(MPI_FOREST_TARGET) $(HYBRID_RF_TARGET)
+	@echo "Built: ./$(HYBRID_RF_TARGET) (alias of MPI + OpenMP build)"
 
-# Tree Builder Test
-$(TREE_BUILDER_TEST_TARGET): $(TREE_BUILDER_TEST_SRC)
-	$(CXX) $(CXXFLAGS) $(TREE_BUILDER_TEST_SRC) $(LDFLAGS) -o $(TREE_BUILDER_TEST_TARGET)
-	@echo "Built: ./$(TREE_BUILDER_TEST_TARGET)"
+$(BACKUP_RF_SERIAL_TARGET): $(BACKUP_RF_SERIAL_SRC)
+	$(CXX) $(CXXFLAGS) $(BACKUP_RF_SERIAL_SRC) $(LDFLAGS) -o $(BACKUP_RF_SERIAL_TARGET)
+	@echo "Built: ./$(BACKUP_RF_SERIAL_TARGET)"
+
+$(BACKUP_RF_OPENMP_TARGET): $(BACKUP_RF_OPENMP_SRC)
+	$(CXX) $(CXXFLAGS) $(BACKUP_RF_OPENMP_SRC) $(LDFLAGS) -o $(BACKUP_RF_OPENMP_TARGET)
+	@echo "Built: ./$(BACKUP_RF_OPENMP_TARGET)"
+
+$(BACKUP_RF_MPI_TARGET): $(BACKUP_RF_MPI_SRC)
+	$(MPI_CXX) $(CXXFLAGS) $(BACKUP_RF_MPI_SRC) $(LDFLAGS) -o $(BACKUP_RF_MPI_TARGET)
+	@echo "Built: ./$(BACKUP_RF_MPI_TARGET)"
 
 # ------------------------------------------------------------
 # Clean
 # ------------------------------------------------------------
 clean:
-	rm -f $(FOREST_TARGET) $(MPI_FOREST_TARGET) $(HISTOGRAM_TEST_TARGET) $(TREE_BUILDER_TEST_TARGET)
+	rm -f $(MPI_FOREST_TARGET) $(HYBRID_RF_TARGET) $(BACKUP_RF_SERIAL_TARGET) $(BACKUP_RF_OPENMP_TARGET) $(BACKUP_RF_MPI_TARGET)
 	@echo "Clean complete."
 
 # ------------------------------------------------------------
 # Run targets
 # ------------------------------------------------------------
 NP ?= 2
-
-run-forest: $(FOREST_TARGET)
-	./$(FOREST_TARGET)
+SEEDS ?= 7 21 42 84 123
+RUN_ARGS ?=
 
 run-mpi: $(MPI_FOREST_TARGET)
 	mpirun -np $(NP) ./$(MPI_FOREST_TARGET)
 
-run-histogram: $(HISTOGRAM_TEST_TARGET)
-	./$(HISTOGRAM_TEST_TARGET)
+run-hybrid: $(HYBRID_RF_TARGET)
+	mpirun -np $(NP) ./$(HYBRID_RF_TARGET)
 
-run-tree-builder: $(TREE_BUILDER_TEST_TARGET)
-	./$(TREE_BUILDER_TEST_TARGET)
+run-backup-serial: $(BACKUP_RF_SERIAL_TARGET)
+	./$(BACKUP_RF_SERIAL_TARGET)
+
+run-backup-openmp: $(BACKUP_RF_OPENMP_TARGET)
+	./$(BACKUP_RF_OPENMP_TARGET) --threads 4
+
+run-backup-mpi: $(BACKUP_RF_MPI_TARGET)
+	mpirun -np $(NP) ./$(BACKUP_RF_MPI_TARGET)
+
+compare-backup-baselines: $(BACKUP_RF_SERIAL_TARGET) $(BACKUP_RF_OPENMP_TARGET) $(MPI_FOREST_TARGET)
+	./$(BACKUP_RF_SERIAL_TARGET) --trees 100 --max-depth 10 --min-samples-split 2
+	./$(BACKUP_RF_OPENMP_TARGET) --threads 4 --trees 100 --max-depth 10 --min-samples-split 2
+	mpirun -np 2 ./$(MPI_FOREST_TARGET) --trees 100 --max-depth 10 --min-samples-split 2
+	python3 Results/compare_backup_baselines.py
+
+sweep-seeds: $(MPI_FOREST_TARGET)
+	@for seed in $(SEEDS); do \
+			echo "Running split seed $$seed"; \
+			mpirun -np $(NP) ./$(MPI_FOREST_TARGET) --split-seed $$seed $(RUN_ARGS); \
+		done
+
+summarize-runs:
+	python3 Results/summarize_runs.py
 
 # Visualization - Compare Models
-visualize: 
+visualize:
 	@echo "Running models and generating comparison visualizations..."
 	@python3 -c "import matplotlib, numpy" 2>/dev/null && \
-		python3 compare_models.py || \
+		python3 Results/compare_models.py || \
 		echo "Error: Please install matplotlib and numpy: pip3 install --break-system-packages matplotlib numpy"
 
-# Default run (MPI forest)
+# Default run
 run: run-mpi
 
-.PHONY: all clean run run-forest run-mpi run-histogram run-tree-builder visualize
+.PHONY: all clean run run-mpi run-hybrid run-backup-serial run-backup-openmp run-backup-mpi compare-backup-baselines sweep-seeds summarize-runs visualize
