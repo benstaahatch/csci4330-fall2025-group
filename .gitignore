@@ -1,30 +1,48 @@
 # Exclude non-parallel code
-serial_forest
-forest_serial.cpp
-main_serial.cpp
-test_histogram
-test_tree_builder
-test_histogram.cpp
-test_tree_builder.cpp
+  serial_forest
+  forest_serial.cpp
+  main_serial.cpp
+  test_histogram
+  test_tree_builder
+  test_histogram.cpp
+  test_tree_builder.cpp
 
-# Exclude visualization files
-*.png
-visualize*.py
-compare_models.py
-install_viz.sh
-requirements.txt
-*_README.md
-*_SUMMARY.md
-MPI_FILES_TO_SEND.txt
+  # Exclude visualization files
+  *.png
+  visualize*.py
+  compare_models.py
+  install_viz.sh
+  requirements.txt
+  *_README.md
+  *_SUMMARY.md
+  MPI_FILES_TO_SEND.txt
 
-# Exclude build artifacts
-*.o
-*.dSYM/
-mpi_code_package/
+  # Exclude build artifacts
+  *.o
+  *.dSYM/
+  mpi_code_package/
 
-# Keep only parallel code files
+  # Keep only parallel code files
 
-# Generated experiment artifacts
-Results/runs/
-Results/plots/
-Results/summaries/
+  # Local environment
+  .venv/
+
+  # Built binaries
+  mpi_forest
+  hybrid_rf
+  backup_rf_serial_compare
+  backup_rf_openmp_compare
+  backup_rf_mpi_compare
+
+  # Generated experiment artifacts
+  Results/runs/
+  Results/plots/
+  Results/summaries/
+  Results/model_results.json
+
+  # Local run logs
+  run_*.txt
+
+  # Local notes / scratch
+  Notes/
+  backup_fixes/
