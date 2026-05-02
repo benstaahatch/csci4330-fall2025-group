@@ -1,0 +1,23 @@
+{
+  "model_name": "Random Forest (Backup OpenMP)",
+  "train_size": 614,
+  "validation_size": 154,
+  "mpi_ranks": 1,
+  "omp_threads": 4,
+  "train_fraction": 0.8,
+  "split_seed": 42,
+  "n_trees": 100,
+  "max_depth": 10,
+  "min_samples_split": 2,
+  "max_features": -1,
+  "runtime_sec": 0.472627,
+  "accuracy": 72.7273,
+  "precision": 87.5,
+  "recall": 25.9259,
+  "f1": 40,
+  "overhead": 27.2727,
+  "tp": 14,
+  "tn": 98,
+  "fp": 2,
+  "fn": 40
+}

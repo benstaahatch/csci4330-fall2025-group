@@ -1,0 +1,23 @@
+{
+  "model_name": "Random Forest (Backup MPI)",
+  "train_size": 614,
+  "validation_size": 154,
+  "mpi_ranks": 2,
+  "omp_threads": 1,
+  "train_fraction": 0.8,
+  "split_seed": 42,
+  "n_trees": 100,
+  "max_depth": 10,
+  "min_samples_split": 2,
+  "max_features": -1,
+  "runtime_sec": 0.716061,
+  "accuracy": 72.0779,
+  "precision": 78.9474,
+  "recall": 27.7778,
+  "f1": 41.0959,
+  "overhead": 27.9221,
+  "tp": 15,
+  "tn": 96,
+  "fp": 4,
+  "fn": 39
+}

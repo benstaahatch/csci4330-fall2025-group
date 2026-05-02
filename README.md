@@ -238,126 +238,37 @@ F1 Score:    72.549%
 ================================
 ```
 
-## Results Workflow
+## Results
 
-### Run a Single Hybrid Experiment
+The project now includes a curated results set under `Results/`:
 
-```bash
-mpirun -np 2 ./mpi_forest --trees 300 --max-depth 12 --min-samples-split 10
-```
+- `Results/runs/` contains the cleaned comparison artifacts
+- `Results/summaries/summary_20260501_200243.csv` contains the latest compact summary
+- `Results/summaries/summary_20260501_200243.json` contains the same summary in JSON form
+- `Results/random_forest_results.ipynb` provides the simplest notebook-based review
 
-This creates a new run artifact under `Results/runs/`:
+The notebook focuses on only two views:
 
-```text
-Results/runs/run_YYYYMMDD_HHMMSS_mmm_r2_seed42_t300_d12_ms10_mf2_tr0.80/metrics.json
-```
+1. **Latest baseline comparison**
+   Serial vs OpenMP vs MPI vs Hybrid
+2. **Best Hybrid configuration**
+   The tuned `~80% accuracy` family across split seeds `7, 21, 42, 84, 123`
 
-### Sweep Multiple Split Seeds
-
-```bash
-make sweep-seeds NP=2 SEEDS="7 21 42 84 123" RUN_ARGS="--trees 300 --max-depth 12 --min-samples-split 10"
-```
-
-### Summarize Saved Runs
-
-```bash
-make summarize-runs
-```
-
-This writes summary files into `Results/summaries/`.
-
-### Visualize Saved Runs
-
-```bash
-make visualize
-```
-
-This reads `Results/runs/run_*/metrics.json` and writes plots into `Results/plots/`.
-
-If `matplotlib` or `numpy` are missing:
-
-```bash
-pip3 install matplotlib numpy
-```
-
-### Notebook-Based Results Review
-
-If you want a notebook workflow similar in spirit to the `rnn-lstm-results.py` analysis script, use:
-
-- [Results/random_forest_results.ipynb](/Users/benstahatch/Documents/Hybrid-Revision/csci4330-fall2025-group/Results/random_forest_results.ipynb:1)
-
-The notebook:
-
-- loads run artifacts from `Results/runs/`
-- compares the latest Serial, OpenMP, MPI, and Hybrid runs
-- plots runtime, overhead, accuracy, precision, recall, and F1
-- summarizes multi-seed Hybrid experiments
-
-You can open it in Jupyter, VS Code notebooks, or any notebook-capable environment:
+Open the notebook with:
 
 ```bash
 jupyter notebook Results/random_forest_results.ipynb
 ```
 
-or
+or in VS Code notebooks using your local Python environment.
 
-```bash
-jupyter lab Results/random_forest_results.ipynb
-```
-
-If Jupyter is not installed:
-
-```bash
-pip3 install notebook
-```
-
-This notebook is especially useful when you want a more presentation-friendly comparison of:
-
-- **Backup Serial**
-- **Backup OpenMP**
-- **Backup MPI**
-- **Current Hybrid MPI + OpenMP**
-
-### JupyterHub and GitHub Notebook Viewing
-
-You can also use the notebook in hosted environments.
-
-#### JupyterHub
-
-If you upload this project to a JupyterHub environment, you can open:
-
-- `Results/random_forest_results.ipynb`
-
-and rerun the notebook directly after generating fresh run artifacts.
-
-Typical workflow:
+If you want to regenerate the same cleaned results locally:
 
 ```bash
 make compare-backup-baselines
 make sweep-seeds NP=2 SEEDS="7 21 42 84 123" RUN_ARGS="--trees 300 --max-depth 12 --min-samples-split 10"
 make summarize-runs
 ```
-
-Then open the notebook from the JupyterHub file browser and run all cells.
-
-#### GitHub
-
-If you push the notebook to GitHub, GitHub will render the notebook automatically for viewing.
-
-This is useful when you want:
-
-- a visual project results page
-- a portable analysis artifact for instructors or teammates
-- a notebook that shows both plots and written conclusions in one place
-
-A good pattern is:
-
-1. Generate fresh run artifacts locally.
-2. Re-run the notebook so outputs are embedded.
-3. Save the notebook with rendered outputs.
-4. Push the notebook to GitHub.
-
-That gives you a viewable notebook directly in the repository without requiring the reader to run it first.
 
 ## How It Works
 

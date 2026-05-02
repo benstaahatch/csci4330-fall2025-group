@@ -1,0 +1,23 @@
+{
+  "model_name": "Random Forest (Backup Serial)",
+  "train_size": 614,
+  "validation_size": 154,
+  "mpi_ranks": 1,
+  "omp_threads": 1,
+  "train_fraction": 0.8,
+  "split_seed": 42,
+  "n_trees": 100,
+  "max_depth": 10,
+  "min_samples_split": 2,
+  "max_features": -1,
+  "runtime_sec": 1.33046,
+  "accuracy": 74.026,
+  "precision": 85,
+  "recall": 31.4815,
+  "f1": 45.9459,
+  "overhead": 25.974,
+  "tp": 17,
+  "tn": 97,
+  "fp": 3,
+  "fn": 37
+}

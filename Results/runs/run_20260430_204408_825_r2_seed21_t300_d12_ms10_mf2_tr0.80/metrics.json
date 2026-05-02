@@ -1,0 +1,22 @@
+{
+  "model_name": "Random Forest (Hybrid)",
+  "train_size": 614,
+  "validation_size": 154,
+  "mpi_ranks": 2,
+  "train_fraction": 0.8,
+  "split_seed": 21,
+  "n_trees": 300,
+  "max_depth": 12,
+  "min_samples_split": 10,
+  "max_features": 2,
+  "runtime_sec": 0.0541469,
+  "accuracy": 74.6753,
+  "precision": 68.2927,
+  "recall": 51.8519,
+  "f1": 58.9474,
+  "overhead": 25.3247,
+  "tp": 28,
+  "tn": 87,
+  "fp": 13,
+  "fn": 26
+}
