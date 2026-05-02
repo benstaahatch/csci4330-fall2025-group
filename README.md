@@ -70,78 +70,143 @@ sudo apt-get install libopenmpi-dev openmpi-bin libomp-dev
 sudo yum install openmpi-devel libomp-devel
 ```
 
-## Building
+## Quick Start
 
-### Build Hybrid RF
+From the project root, the normal user flow is:
+
+```bash
+make clean
+make all
+make run
+```
+
+That sequence:
+
+- removes previously built executables
+- rebuilds the default hybrid MPI + OpenMP executable `mpi_forest`
+- runs the default MPI launch path, which is `make run -> make run-mpi`
+
+By default, `make run` uses `2` MPI ranks. To change that:
+
+```bash
+make NP=4 run
+```
+
+## Make Targets
+
+### Main Build and Run Targets
+
+```bash
+make clean        # remove built executables
+make all          # build the default hybrid executable: ./mpi_forest
+make run          # run the default target (same as: make run-mpi)
+make run-mpi      # mpirun -np $(NP) ./mpi_forest
+make run-hybrid   # mpirun -np $(NP) ./hybrid_rf
+```
+
+### Additional Build Targets
 
 ```bash
 make mpi_forest
-```
-
-### Build README-Compatible Alias
-
-```bash
 make hybrid_rf
+make backup_rf_serial_compare
+make backup_rf_openmp_compare
+make backup_rf_mpi_compare
 ```
 
-### Build Backup Baseline Comparators
+### Backup / Comparison Targets
 
 ```bash
-make backup_rf_serial_compare backup_rf_openmp_compare backup_rf_mpi_compare
+make run-backup-serial
+make run-backup-openmp
+make run-backup-mpi
+make compare-backup-baselines
 ```
 
-### Build Default Target
+### Experiment / Results Targets
 
 ```bash
-make
+make sweep-seeds
+make summarize-runs
+make visualize
 ```
 
-## Running
+## Common Make Usage
 
-### Hybrid RF (Recommended)
+### Default Run
 
-Run with 2 MPI ranks:
+```bash
+make clean
+make all
+make run
+```
+
+### Run with More MPI Ranks
+
+```bash
+make NP=4 run
+```
+
+### Run Tuned Hyperparameters
+
+```bash
+make NP=2 RUN_ARGS="--trees 300 --max-depth 12 --min-samples-split 10" sweep-seeds
+```
+
+### Run a Single Manual MPI Command
+
+If you want to bypass `make run` and launch directly:
 
 ```bash
 mpirun -np 2 ./mpi_forest
 ```
 
-Run with custom hyperparameters:
+Example with custom hyperparameters:
 
 ```bash
 mpirun -np 2 ./mpi_forest --trees 300 --max-depth 12 --min-samples-split 10
 ```
 
-Run with a different split seed:
+Example with a different split seed:
 
 ```bash
 mpirun -np 2 ./mpi_forest --split-seed 84 --trees 300 --max-depth 12 --min-samples-split 10
 ```
 
-### Hybrid RF Alias
+## Make Variables
+
+The `Makefile` currently exposes these user-facing variables:
+
+- `NP`: number of MPI ranks used by `run-mpi`, `run-hybrid`, `run-backup-mpi`, and `sweep-seeds` (default: `2`)
+- `SEEDS`: split seeds used by `make sweep-seeds` (default: `7 21 42 84 123`)
+- `RUN_ARGS`: extra command-line flags appended during `make sweep-seeds`
+
+Examples:
 
 ```bash
-mpirun -np 2 ./hybrid_rf
+make NP=4 run
+make SEEDS="42 84" sweep-seeds
+make NP=2 RUN_ARGS="--train-fraction 0.8 --trees 300 --max-depth 12 --min-samples-split 10" sweep-seeds
 ```
 
-### Backup Baseline Comparisons
+## Backup Baseline Commands
 
 Run the repaired backup serial RF under the current validation protocol:
 
 ```bash
-./backup_rf_serial_compare
+make run-backup-serial
 ```
 
 Run the repaired backup OpenMP RF with 4 threads:
 
 ```bash
-./backup_rf_openmp_compare --threads 4
+make run-backup-openmp
 ```
 
-Run the repaired backup MPI RF with 2 ranks:
+Run the repaired backup MPI RF with 2 ranks by default:
 
 ```bash
-mpirun -np 2 ./backup_rf_mpi_compare
+make run-backup-mpi
 ```
 
 Run the latest backup-vs-hybrid baseline comparison:
