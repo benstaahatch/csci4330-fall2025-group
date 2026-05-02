@@ -240,35 +240,35 @@ F1 Score:    72.549%
 
 ## Results
 
-The project now includes a curated results set under `Results/`:
+The project uses the [`Results/`](Results/) directory for experiment review:
 
-- `Results/runs/` contains the cleaned comparison artifacts
-- `Results/summaries/summary_20260501_200243.csv` contains the latest compact summary
-- `Results/summaries/summary_20260501_200243.json` contains the same summary in JSON form
-- `Results/random_forest_results.ipynb` provides the simplest notebook-based review
+- [`Results/runs/`](Results/runs/) stores the curated comparison artifacts
+- [`Results/summaries/summary_20260501_200243.csv`](Results/summaries/summary_20260501_200243.csv) stores the compact summary
+- [`Results/summaries/summary_20260501_200243.json`](Results/summaries/summary_20260501_200243.json) stores the same summary in JSON form
+- [`Results/plots/`](Results/plots/) stores the exported comparison plots
+- [`Results/random_forest_results.ipynb`](Results/random_forest_results.ipynb) provides the notebook-based results review
 
-The notebook focuses on only two views:
+The notebook focuses on two views:
 
-1. **Latest baseline comparison**
+1. **Latest baseline comparison**  
    Serial vs OpenMP vs MPI vs Hybrid
-2. **Best Hybrid configuration**
-   The tuned `~80% accuracy` family across split seeds `7, 21, 42, 84, 123`
 
-Open the notebook with:
+2. **Best current Hybrid configuration**  
+   The tuned `~80% accuracy` family across split seeds `7`, `21`, `42`, `84`, `123`
 
-```bash
-jupyter notebook Results/random_forest_results.ipynb
-```
+### Example Graphs
 
-or in VS Code notebooks using your local Python environment.
+#### Baseline Runtime Comparison
 
-If you want to regenerate the same cleaned results locally:
+[Open plot](Results/plots/baseline_runtime.png)
 
-```bash
-make compare-backup-baselines
-make sweep-seeds NP=2 SEEDS="7 21 42 84 123" RUN_ARGS="--trees 300 --max-depth 12 --min-samples-split 10"
-make summarize-runs
-```
+![Baseline Runtime Comparison](Results/plots/baseline_runtime.png)
+
+#### Best Hybrid Across Split Seeds
+
+[Open plot](Results/plots/best_hybrid_seeds.png)
+
+![Best Hybrid Across Split Seeds](Results/plots/best_hybrid_seeds.png)
 
 ## How It Works
 
